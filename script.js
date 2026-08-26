@@ -1,10 +1,13 @@
-const STORAGE_KEY = "todos";
+const COOKIE_KEY = "todos";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 const form = document.getElementById("todo-form");
 const input = document.getElementById("todo-input");
 const list = document.getElementById("todo-list");
+const hostInfo = document.getElementById("host-info");
 
 let todos = loadTodos();
+renderHost();
 render();
 
 form.addEventListener("submit", (event) => {
@@ -25,15 +28,17 @@ form.addEventListener("submit", (event) => {
 
 function loadTodos() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    const saved = getCookie(COOKIE_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
 function saveTodos() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+  const value = encodeURIComponent(JSON.stringify(todos));
+  document.cookie = `${COOKIE_KEY}=${value}; max-age=${COOKIE_MAX_AGE}; path=/; samesite=lax`;
 }
 
 function generateId() {
@@ -74,4 +79,20 @@ function render() {
     item.append(checkbox, text, removeButton);
     list.appendChild(item);
   });
+}
+
+function getCookie(name) {
+  const prefix = `${name}=`;
+  const entry = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+
+  if (!entry) return "";
+  return decodeURIComponent(entry.slice(prefix.length));
+}
+
+function renderHost() {
+  if (!hostInfo) return;
+  hostInfo.textContent = `Host: ${window.location.host || "local file"}`;
 }
